@@ -21,7 +21,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 //// encoder declarations
 #define encoderOutputA 6 // pin 6 is encoder output A
-#define encoderOutputB 7 // pin 7 is encoder output B
+#define encoderOutputB 5 // pin 5 is encoder output B
+#define buttonE 7 // pin 7 is the encoder button output
 
 int encoderCounter = 0; // a counter for the number of encoder ticks since last reset 
 //(encoderCounter resets to zero after a scrollable menu option is chosen resulting in the closure of the menu)
@@ -31,9 +32,8 @@ bool scroll = false; // this determines if the encoder needs to be read.
 // it will be true if there is a scrollable menu open
 
 //// button declarations
-//#define buttonA _ // pin _ is the left button output
-//#define buttonB _ // pin _ is the right button output
-//#define buttonE _ // pin _ is the encoder button output
+#define buttonA 9 // pin 9 is the left button output
+#define buttonB 8 // pin 8 is the right button output
 
 //// menu declarations
 /// menu
@@ -53,11 +53,11 @@ void setup() {
   // encoder setup
   pinMode (encoderOutputA,INPUT);
   pinMode (encoderOutputB,INPUT);
-  //pinMode (buttonE, INPUT); (commented until I decide on the pin assignment)
+  pinMode (buttonE, INPUT); (commented until I decide on the pin assignment)
 
   // button setup
-  //pinMode (buttonA, INPUT); (commented until I decide on the pin assignment)
-  //pinMode (buttonB, INPUT); (commented until I decide on the pin assignment)
+  pinMode (buttonA, INPUT); (commented until I decide on the pin assignment)
+  pinMode (buttonB, INPUT); (commented until I decide on the pin assignment)
 
   // OLED screen setup
 
