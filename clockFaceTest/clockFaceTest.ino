@@ -11,13 +11,28 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-// screen definitions
+//// screen definitions
+// dimentions
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 #define OLED_RESET 4 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+/// screen display arrays
+// 0: no menu, 1: main menu, 2: set time, 3: set alarm (time select screen), 4: set pomodoro timer (work time select screen), 5: set pomodoro timer (rest time select screen)
+int menuDisplay = 0;
+// 0: first option, 1: second option, 2: third option
+int menuOptionHighlight = 0; //if necessary for minimizing memory using two booleans would be 16 bits instead of the 32 for an int
+// false: no menu settings (left = menu, right = ____), true: in a menu or menu item (left = entr, right = back)
+bool buttonDisplay = false;
+// (Timer/Alarm window) 0: none, 1: timer, 2: alarm, 3: sounding alarm/timer
+int TAwindow = 0;
+
+//// time declarations
+char curTime[8] = "00:00 AM";
+/// timer and alarm variables
+//not sure what to do here yet...
 
 //// encoder declarations
 #define encoderOutputA 6 // pin 6 is encoder output A
@@ -50,22 +65,32 @@ bool setClockOpen = false;
 void setup() {
   // put your setup code here, to run once:
 
-  // encoder setup
+  /// OLED screen setup
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) { // Address 0x3D for 128x64
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+  // Show initial display buffer contents on the screen --
+  // the library initializes this with an Adafruit splash screen.
+  display.display();
+  delay(2000); // Pause for 2 seconds
+  // Clear the buffer
+  display.clearDisplay();
+  
+  /// encoder setup
   pinMode (encoderOutputA,INPUT);
   pinMode (encoderOutputB,INPUT);
-  pinMode (buttonE, INPUT); (commented until I decide on the pin assignment)
+  pinMode (buttonE, INPUT); 
+  
+  /// button setup
+  pinMode (buttonA, INPUT);
+  pinMode (buttonB, INPUT);
 
-  // button setup
-  pinMode (buttonA, INPUT); (commented until I decide on the pin assignment)
-  pinMode (buttonB, INPUT); (commented until I decide on the pin assignment)
-
-  // OLED screen setup
-
-  // clock setup (for when using real time clock)
+  /// clock setup (for when using real time clock)
 
   
-  
-  Serial.begin (9600); // not usre if this is the best serial pace to use
+  Serial.begin (9600); // not sure if this is the best serial pace to use
 
   // encoder setup after serial.being
   // Reads the initial state of the outputA
@@ -92,14 +117,102 @@ void loop() {
     aLastState = aState;
   }
   
-  //  check button A for presses
+  // check button A for presses
   if (digitalRead(buttonA) == HIGH){
-    //activate whatever menu option is active
+    // activate whatever menu option is active
   }
 
-  //  check button B for presses
+  // check button B for presses
   if (digitalRead(buttonB) == HIGH){
-    //activate whatever secondary option is active (most likely "back" or "cancel")
+    // activate whatever secondary option is active (most likely "back" or "cancel")
   }
   
+}
+
+// function for drawing the screen
+void drawScreen() {
+  ///clear display
+  //display.clearDisplay();
+  
+  /// draw the clock
+
+  /// draw the alarm/timer
+  // draw the rectangle
+  switch (TAwindow) { //0: none, 1: timer, 2: alarm, 3: sounding alarm/timer
+    case "0":
+      // none
+    break;
+    
+    case "1":
+      // timer
+    break;
+
+    case "2":
+      // alarm
+    break;
+
+    case "3":
+      // sounding alarm/timer
+    break;
+  }
+  
+  /// draw the menu
+  switch (menuDisplay) {
+      case '0':
+        // no menu
+      break;
+      
+      case '1':
+        /// main menu
+        // draw the three boxes and lables for t-set, alarm, and timer
+        // draw the selection box around the currently highlighed box with the switch below
+        switch (menuOptionHighlight) {
+          case "0":
+            // option 1
+          break;
+          
+          case "1":
+            // option 2
+          break;
+
+          case "2":
+            // option 3
+          break;
+        }
+      break;
+
+      case '2':
+        /// set time
+        //draw a static scroll symbol
+      break;
+
+      case '3':
+        /// set alarm (time select screen)
+        // draw a scroll symbol with a readout of the current alarm time
+      break;
+
+      case '4':
+        /// set pomodoro timer (work time select screen)
+        // draw a scroll symbol with a readout of the current alarm time and indication taht this is the "work" time
+      break;
+
+      case '5':
+        /// set pomodoro timer (rest time select screen)
+        // draw a scroll symbol with a readout of the current alarm time and indication taht this is the "rest" time
+      break;
+  }
+
+  /// draw the buttons
+  //draw the two rectangles
+  switch (buttonDisplay) {
+    case false:
+      // no menu settings (left = menu, right = ____)
+      // draw the text
+    break;
+    
+    case true:
+      // in a menu or menu item (left = entr, right = back)
+      // draw the text
+    break;
+  }
 }
