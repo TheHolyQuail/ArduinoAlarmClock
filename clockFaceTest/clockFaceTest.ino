@@ -20,7 +20,7 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 /// screen display arrays
-// 0: no menu, 1: main menu, 2: set time, 3: set alarm (time select screen), 4: set pomodoro timer (work time select screen), 5: set pomodoro timer (rest time select screen)
+// 0: no menu, 1: main menu, 2: set time (minutes), 3: set time (hours), 4: set alarm (time select screen), 5: set pomodoro timer (work time select screen), 6: set pomodoro timer (rest time select screen)
 short int menuDisplay = 0;
 // 0: no menu, 1: first option, 2: second option 3: third option
 short int menuOptionHighlight = 0;
@@ -30,6 +30,10 @@ bool buttonDisplay = false;
 short int TAwindow = 0;
 
 //// time declarations
+unsigned long currentMillis;
+unsigned long previousMillis = 0;
+const unsigned long period = 60000;  //the value is a number of milliseconds, ie 60 seconds
+
 short int curTimeHour = 0; // hours portion of the current time
 short int curTimeMin = 0; // minutes portion of the current time
 char curTimeChar[5] = {'0', '0', ':', '0', '0'}; // displayable text of the time
@@ -107,6 +111,18 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
+  // time incrementing
+  currentMillis = millis();  //get the current "time" (actually the number of milliseconds since the program started)
+  if (currentMillis - startMillis >= period)  //test whether the period has elapsed
+  {
+    //// update that a minute has passed
+    /// clock
+
+    /// timer/alarm
+    
+    startMillis = currentMillis;  //IMPORTANT to save the start time of the current LED state.
+  }
+  
   // encoder reading
   // If there is a scrollable menu open the loop will check tbe encoder for updates
   // and will modify encoderCounter accordingly
@@ -131,6 +147,102 @@ void loop() {
   // check button B for presses
   if (digitalRead(buttonB) == HIGH){
     // activate whatever secondary option is active (most likely "back" or "cancel")
+  }
+
+  /// UI specific functionality
+  switch (TAwindow) { //0: none, 1: timer, 2: alarm, 3: sounding alarm/timer
+    case 0:
+      // display nothing
+    break;
+    
+    case 1:
+      // timer
+    break;
+
+    case 2:
+      // alarm
+    break;
+
+    case 3:
+      // ringing alarm (no progess bar or symbols)
+    break;
+  }
+  
+  /// draw the menu
+  switch (menuDisplay) {
+      case 0:
+        // no menu
+        //if button A is pressed 
+          //menuDisplay = 1
+          //buttonDisplay = true
+      break;
+      
+      case 1:
+        /// main menu
+        //if the encoder has rotated to the right move the highlight to the right
+        //if the encoder has rotated to the left move the highlight to the left
+        // if button B is pressed exit the main menu (imediately break from this case since the menu is now closed)
+        
+        /// draw the selection box around the currently highlighed box with the switch below
+        switch (menuOptionHighlight) {
+          case 0:
+            // option 1
+            //if button A is pressed menuDisplay = 2
+          break;
+          
+          case 1:
+            // option 2
+            //if button A is pressed menuDisplay = 4
+              //set the alarm to 0 and delete any running alarms or timers
+          break;
+
+          case 2:
+            // option 3
+            //if button A is pressed menuDisplay = 5
+              //set the timer to 0 and delete any running alarms or timers
+          break;
+        }
+      break;
+
+      case 2:
+        /// set time (minutes)
+        //if the encoder has rotated to the right move the time one minute up
+        //if the encoder has rotated to the left move the time one minute down
+        //if button A is pressed save the minutes and menuDisplay = 3
+        //if button B is pressed cancel the alarm and menuDisplay = 1
+      break;
+
+      case 3:
+        /// set time (hours)
+        //if the encoder has rotated to the right move the time one hour up
+        //if the encoder has rotated to the left move the time one hour down
+        //if button A is pressed start the alarm and menuDisplay = 0 and buttonDisplay = false
+        //if button B is pressed cancel the alarm and menuDisplay = 1
+      break;
+
+      case 4:
+        /// set alarm (time select screen)
+        //if the encoder has rotated to the right move the alarm one minute up
+        //if the encoder has rotated to the left move the alarm one minute down
+        //if button A is pressed start the alarm and menuDisplay = 0 and buttonDisplay = false
+        //if button B is pressed cancel the alarm and menuDisplay = 1
+      break;
+
+      case 5:
+        /// set pomodoro timer (work time select screen)
+        //if the encoder has rotated to the right move the work timer one minute up
+        //if the encoder has rotated to the left move the work timer one minute down
+        //if button A is pressed save the new work timer value and menuDisplay = 6
+        //if button B is pressed cancel the timer and menuDisplay = 1
+      break;
+
+      case 6:
+        /// set pomodoro timer (rest time select screen)
+        //if the encoder has rotated to the right move the break timer one minute up
+        //if the encoder has rotated to the left move the break timer one minute down
+        //if button A is pressed start the timer (begining with a work cycle) and menuDisplay = 0 and buttonDisplay = false
+        //if button B is pressed cancel the timer and menuDisplay = 1
+      break;
   }
   
 }
@@ -264,7 +376,7 @@ void drawScreen() {
       break;
 
       case 2:
-        /// set time
+        /// set time (minutes)
         //draw a static image
         display.drawLine(0, 38, 54, 38, SSD1306_WHITE);
         display.drawLine(72, 38, 127, 38, SSD1306_WHITE);
@@ -275,6 +387,17 @@ void drawScreen() {
       break;
 
       case 3:
+        /// set time (hours)
+        //draw a static image
+        display.drawLine(0, 38, 54, 38, SSD1306_WHITE);
+        display.drawLine(72, 38, 127, 38, SSD1306_WHITE);
+        display.drawCircle(63, 38, 8, SSD1306_WHITE);
+        display.drawLine(62, 38, 66, 38, SSD1306_WHITE);
+        display.drawLine(63, 33, 63, 39, SSD1306_WHITE);
+        display.drawPixel(63, 38, 0);
+      break;
+
+      case 4:
         /// set alarm (time select screen)
         display.drawLine(0, 38, 54, 38, SSD1306_WHITE);
         display.drawLine(72, 38, 127, 38, SSD1306_WHITE);
@@ -285,7 +408,7 @@ void drawScreen() {
         // draw a readout of the current alarm time
       break;
 
-      case 4:
+      case 5:
         /// set pomodoro timer (work time select screen)
         display.drawLine(0, 38, 54, 38, SSD1306_WHITE);
         display.drawLine(72, 38, 127, 38, SSD1306_WHITE);
@@ -296,7 +419,7 @@ void drawScreen() {
         // draw a readout of the current timer time and indication that this is the "work" time
       break;
 
-      case 5:
+      case 6:
         /// set pomodoro timer (rest time select screen)
         display.drawLine(0, 38, 54, 38, SSD1306_WHITE);
         display.drawLine(72, 38, 127, 38, SSD1306_WHITE);
