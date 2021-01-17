@@ -45,14 +45,31 @@ char TAwindowSym = 'w'; // " ": none, "w": timer (work section), "b": timer (bre
 short int TAwindowProgress = 25; // percent of the time left (out of the max progress bar length: 25)
 
 //// encoder declarations
-#define encoderOutputA 6 // pin 6 is encoder output A
-#define encoderOutputB 5 // pin 5 is encoder output B
-#define buttonE 7 // pin 7 is the encoder button output
+//#define encoderOutputA 6 // pin 6 is encoder output A
+//#define encoderOutputB 5 // pin 5 is encoder output B
+// #define buttonE 7 // pin 7 is the encoder button output
+volatile boolean fired;
+volatile boolean up;
 
-int encoderCounter = 0; // a counter for the number of encoder ticks since last reset 
-//(encoderCounter resets to zero after a scrollable menu option is chosen resulting in the closure of the menu)
-int aState; // the state of encoderOutputA
-int aLastState; // the last state of encoderOutputA
+const byte encoderPinA = 2;
+const byte encoderPinB = 3;
+
+// Interrupt Service Routine for a change to encoder pin A
+void isr ()
+{
+  if (digitalRead (encoderPinA))
+    up = digitalRead (encoderPinB);
+  else
+    up = !digitalRead (encoderPinB);
+  
+  if(digitalRead (encoderPinA)){
+    fired = true;
+  }
+}  // end of isr
+//int encoderCounter = 0; // a counter for the number of encoder ticks since last reset 
+////(encoderCounter resets to zero after a scrollable menu option is chosen resulting in the closure of the menu)
+//int aState; // the state of encoderOutputA
+//int aLastState; // the last state of encoderOutputA
 bool scroll = false; // this determines if the encoder needs to be read.
 // it will be true if there is a scrollable menu open
 
@@ -89,16 +106,16 @@ void setup() {
   display.clearDisplay();
   
   /// encoder setup
-  pinMode (encoderOutputA,INPUT);
-  pinMode (encoderOutputB,INPUT);
-  pinMode (buttonE, INPUT); 
+  pinMode (encoderPinA, INPUT_PULLUP);     // enable pull-ups
+  pinMode (encoderPinB, INPUT_PULLUP); 
+  attachInterrupt (digitalPinToInterrupt (encoderPinA), isr, CHANGE);   // interrupt 0 is pin 2
+//  pinMode (encoderOutputA,INPUT);
+//  pinMode (encoderOutputB,INPUT);
+  //pinMode (buttonE, INPUT); 
   
   /// button setup
   pinMode (buttonA, INPUT);
   pinMode (buttonB, INPUT);
-
-  /// clock setup (for when using real time clock)
-
   
   Serial.begin (9600); // not sure if this is the best serial pace to use
 
@@ -110,7 +127,9 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-
+  
+  static long rotaryCount = 0; // declare the counter for the encoder
+  
   // time incrementing
   currentMillis = millis();  //get the current "time" (actually the number of milliseconds since the program started)
   if (currentMillis - startMillis >= period)  //test whether the period has elapsed
@@ -127,18 +146,30 @@ void loop() {
   // If there is a scrollable menu open the loop will check tbe encoder for updates
   // and will modify encoderCounter accordingly
   if (scroll){
-    aState = digitalRead(encoderOutputA);
-    if (aState != aLastState){     
-      if (digitalRead(encoderOutputB) != aState) { 
-        encoderCounter ++;
-      }
-      else {
-        encoderCounter--;
-      }
-    }
-    aLastState = aState;
+    if (fired)
+    {
+    if (up)
+      rotaryCount++;
+    else
+      rotaryCount--;
+    fired = false;
+        
+    Serial.print ("Count = ");  
+    Serial.println (rotaryCount);
+    }  // end if fired
+    
+//    aState = digitalRead(encoderOutputA);
+//    if (aState != aLastState){     
+//      if (digitalRead(encoderOutputB) != aState) { 
+//        encoderCounter ++;
+//      }
+//      else {
+//        encoderCounter--;
+//      }
+//    }
+//    aLastState = aState;
   }
-  
+
   // check button A for presses
   if (digitalRead(buttonA) == HIGH){
     // activate whatever menu option is active
@@ -168,7 +199,7 @@ void loop() {
     break;
   }
   
-  /// draw the menu
+  /// menu actions
   switch (menuDisplay) {
       case 0:
         // no menu
