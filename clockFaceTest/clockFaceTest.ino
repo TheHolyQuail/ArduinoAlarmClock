@@ -40,8 +40,11 @@ char curTimeChar[5] = {'0', '0', ':', '0', '0'}; // displayable text of the time
 bool AM = true; // true if the time is AM, false if it is PM
 /// timer and alarm variables
 short int alarmTime = 0; // minutes left in the timer
-char alarmChar[2] = {'0', '0'}; // the first and second characters representing the remaining time in minutes (timers and alarms can be a max of 1 hour in this design)
-char TAwindowSym = 'w'; // " ": none, "w": timer (work section), "b": timer (break section), "a": alarm 
+short int timerWorkTime = 0; // minutes left in the timer
+short int timerBreakTime = 0; // minutes left in the timer
+char timerChar[2] = {'0', '0'}; // the first and second characters representing the remaining time in minutes (timers and alarms can be a max of 1 hour in this clock screen design)
+char alarmChar[2] = {'0', '0'}; // the first and second characters representing the remaining time in minutes (timers and alarms can be a max of 1 hour in this clock screen design)
+char TAwindowSym = 'w'; // ' ': none, 'w': timer (work section), 'b': timer (break section), 'a': alarm 
 short int TAwindowProgress = 25; // percent of the time left (out of the max progress bar length: 25)
 
 //// encoder declarations
@@ -135,7 +138,10 @@ void loop() {
 //    /// clock
 //
 //    /// timer/alarm
-//    
+//    // only adjusts if the alarm/timer variables are greater than zero
+//    // if it sets an alarm of timer to zero the alarm done screen is activated for a second and a sound is played
+//    // if a timer is what finished then swap the timer value over to the next phase of the pomodoro set
+// 
 //    startMillis = currentMillis;  //IMPORTANT to save the start time of the current LED state.
 //  }
 
@@ -377,6 +383,10 @@ void loop() {
 
       case 4:
         /// set alarm (time select screen)
+        // display the timer as it is set
+        TAwindow = 2;
+        TAwindowSym = 'a';
+        
         if (pressedB){
           menuDisplay = 0;
           pressedB = false;
@@ -385,6 +395,8 @@ void loop() {
           rotaryCount = 0;
           previousRotaryCount = 0;
           buttonDisplay = false;
+          TAwindow = 0;
+          TAwindowSym = ' ';
         }
 
         // update the minutes based on the encoder value
@@ -406,7 +418,8 @@ void loop() {
         if (pressedA){
           // finish the alarm setting and return to main screen
           menuDisplay = 0;
-          TAwindow = 1;
+          TAwindow = 2;
+          TAwindowSym = 'a';
           // set the progress bar to its full length
           TAwindowProgress = 25;
           // reset and activate relevant variables
@@ -421,6 +434,10 @@ void loop() {
 
       case 5:
         /// set pomodoro timer (work time select screen)
+        // display the timer as it is set
+        TAwindow = 1;
+        TAwindowSym = 'w';
+          
         if (pressedB){
           menuDisplay = 0;
           pressedB = false;
@@ -429,17 +446,84 @@ void loop() {
           rotaryCount = 0;
           previousRotaryCount = 0;
           buttonDisplay = false;
+          TAwindow = 0;
+          TAwindowSym = ' ';
         }
-        //if the encoder has rotated to the right move the work timer one minute up
-        //if the encoder has rotated to the left move the work timer one minute down
-        //if button A is pressed save the new work timer value and menuDisplay = 6
-        //if button B is pressed cancel the timer and menuDisplay = 1
+
+        // update the minutes based on the encoder value
+        timerWorkTime = timerWorkTime + rotaryCount;
+        // reset encoder value
+        rotaryCount = 0;
+        // if the current set minutes is greater than 60 remove 60 from it and check again until it is less than 60
+        while (timerWorkTime > 60){
+          // subtract the rollover
+          timerWorkTime = timerWorkTime - 60;
+        }
+        // if the current set minutes is less than 0 add 60 to it and check again until it is greater than 0
+        while (timerWorkTime < 0){
+          // remove the rollover
+          timerWorkTime = timerWorkTime + 60;
+        }
+        
+        // if button A is pressed move on to selecting the hour
+        if (pressedA){
+          // finish the alarm setting and return to main screen
+          menuDisplay = 6;
+          TAwindow = 1;
+          // set the progress bar to its full length
+          TAwindowProgress = 12;
+          // reset and activate relevant variables
+          pressedB = false;
+          pressedA = false;
+          scroll = true;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          buttonDisplay = true;
+        }
       break;
 
       case 6:
         /// set pomodoro timer (rest time select screen)
+        // display the timer as it is set
+        TAwindow = 1;
+        TAwindowSym = 'b';
+        
         if (pressedB){
           menuDisplay = 0;
+          pressedB = false;
+          pressedA = false;
+          scroll = false;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          buttonDisplay = false;
+          TAwindow = 0;
+          TAwindowSym = ' ';
+        }
+
+        // update the minutes based on the encoder value
+        timerBreakTime = timerBreakTime + rotaryCount;
+        // reset encoder value
+        rotaryCount = 0;
+        // if the current set minutes is greater than 60 remove 60 from it and check again until it is less than 60
+        while (timerBreakTime > 60){
+          // subtract the rollover
+          timerBreakTime = timerBreakTime - 60;
+        }
+        // if the current set minutes is less than 0 add 60 to it and check again until it is greater than 0
+        while (timerBreakTime < 0){
+          // remove the rollover
+          timerBreakTime = timerBreakTime + 60;
+        }
+        
+        // if button A is pressed move on to selecting the hour
+        if (pressedA){
+          // finish the alarm setting and return to main screen
+          menuDisplay = 0;
+          TAwindow = 1;
+          TAwindowSym = 'w';
+          // set the progress bar to its full length
+          TAwindowProgress = 25;
+          // reset and activate relevant variables
           pressedB = false;
           pressedA = false;
           scroll = false;
@@ -483,12 +567,37 @@ void loop() {
     
     case 1:
       // timer
-      
+      if(TAwindowSym == 'w'){
+        if(timerWorkTime < 10){
+          timerChar[0] = '0';
+          timerChar[1]= '0' + timerWorkTime;
+        } else {
+          short int tensPlace = timerWorkTime / 10;
+          timerChar[0] = '0' + tensPlace;
+          timerChar[1] = '0' + (timerWorkTime - (tensPlace * 10));
+        }
+      } else {
+        if(timerBreakTime < 10){
+          timerChar[0] = '0';
+          timerChar[1]= '0' + timerBreakTime;
+        } else {
+          short int tensPlace = timerBreakTime / 10;
+          timerChar[0] = '0' + tensPlace;
+          timerChar[1] = '0' + (timerBreakTime - (tensPlace * 10));
+        }
+      }
     break;
 
     case 2:
       // alarm
-      
+      if(alarmTime < 10){
+        alarmChar[0] = '0';
+        alarmChar[1]= '0' + alarmTime;
+      } else {
+        short int tensPlace = alarmTime / 10;
+        alarmChar[0] = '0' + tensPlace;
+        alarmChar[1] = '0' + (alarmTime - (tensPlace * 10));
+      }
     break;
 
     case 3:
@@ -540,8 +649,8 @@ void drawScreen() {
     case 1:
       // timer
       display.setCursor(97, 4); // upper right
-      display.write(alarmChar[0]); // digit one of current timer value
-      display.write(alarmChar[1]); // digit two of current timer value
+      display.write(timerChar[0]); // digit one of current timer value
+      display.write(timerChar[1]); // digit two of current timer value
       display.setTextSize(1); // symbol text size
       display.setCursor(121, 3);     // upper left
       display.write(TAwindowSym); // current timer symbol
