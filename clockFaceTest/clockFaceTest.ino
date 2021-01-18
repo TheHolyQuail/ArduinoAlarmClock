@@ -75,16 +75,16 @@ bool scroll = false; // this determines if the encoder needs to be read. // it w
 bool pressedA = false; // for use in activating button activated code and to prevent multifiring on one press
 bool pressedB = false; // for use in activating button activated code and to prevent multifiring on one press
 
-//// menu declarations
-/// menu
-bool menuOpen = false;
-int menuPos = 0;
-/// timer
-bool setTimerOpen = false;
-/// clock
-// variable for time (not sure how to store)
-/// set clock
-bool setClockOpen = false;
+////// menu declarations
+///// menu
+//bool menuOpen = false;
+//int menuPos = 0;
+///// timer
+//bool setTimerOpen = false;
+///// clock
+//// variable for time (not sure how to store)
+///// set clock
+//bool setClockOpen = false;
 
 
 void setup() {
@@ -168,6 +168,7 @@ void loop() {
     // show future code that button A has been pressed
     Serial.println ("button A pressed");
     pressedA = true;
+    delay(500);
   } else {
     pressedA = false; 
   }
@@ -177,6 +178,7 @@ void loop() {
     // show future code that button B has been pressed
     Serial.println ("button B pressed");
     pressedB = true;
+    delay(500);
   } else {
     pressedB = false; 
   }
@@ -189,9 +191,18 @@ void loop() {
   switch (menuDisplay) {
       case 0:
         // no menu
-        //if button A is pressed 
-          //menuDisplay = 1
-          //buttonDisplay = true
+        // if button A is pressed then open the menu screen
+        if (pressedA){
+          // activate menu option 1
+          menuDisplay = 1;
+          // reset and activate relevant variables
+          menuOptionHighlight = 0;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          scroll = true;
+          pressedA = false;
+          buttonDisplay = true;
+        }
       break;
       
       case 1:
@@ -206,9 +217,11 @@ void loop() {
           scroll = false;
           rotaryCount = 0;
           previousRotaryCount = 0;
+          buttonDisplay = false;
         } else {
           // if the count has gone down or up change the menu highlight accordingly
           if (previousRotaryCount < rotaryCount){
+            Serial.println ("pre < current");
             switch (menuOptionHighlight) {
               case 0:
                 menuOptionHighlight = 1;
@@ -221,15 +234,16 @@ void loop() {
               break; 
             }
           } else if (previousRotaryCount > rotaryCount){
+            Serial.println ("pre > current");
             switch (menuOptionHighlight) {
               case 0:
-                menuOptionHighlight = 1;
-              break;
-              case 1:
                 menuOptionHighlight = 2;
               break;
-              case 2:
+              case 1:
                 menuOptionHighlight = 0;
+              break;
+              case 2:
+                menuOptionHighlight = 1;
               break; 
             }
           }
@@ -283,30 +297,142 @@ void loop() {
 
       case 2:
         /// set time (minutes)
-        //if the encoder has rotated to the right move the time one minute up
-        //if the encoder has rotated to the left move the time one minute down
-        //if button A is pressed save the minutes and menuDisplay = 3
-        //if button B is pressed cancel the alarm and menuDisplay = 1
+        if (pressedB){
+          menuDisplay = 0;
+          pressedB = false;
+          pressedA = false;
+          scroll = false;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          buttonDisplay = false;
+        }
+        // update the munites based on the encoder value
+        curTimeMin = curTimeMin + rotaryCount;
+        // reset encoder value
+        rotaryCount = 0;
+        // if the current set minutes is greater than 60 remove 60 from it and check again until it is less than 60
+        while (curTimeMin > 60){
+          // subtract the rollover
+          curTimeMin = curTimeMin - 60;
+        }
+        // if the current set minutes is less than 0 add 60 to it and check again until it is greater than 0
+        while (curTimeMin < 0){
+          // remove the rollover
+          curTimeMin = curTimeMin + 60;
+        }
+        
+        // if button A is pressed move on to selecting the hour
+        if (pressedA){
+          // move on to adjusting the hour time
+          menuDisplay = 3;
+          // reset and activate relevant variables
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          scroll = true;
+          pressedA = false;
+        }
       break;
 
       case 3:
         /// set time (hours)
-        //if the encoder has rotated to the right move the time one hour up
-        //if the encoder has rotated to the left move the time one hour down
-        //if button A is pressed start the alarm and menuDisplay = 0 and buttonDisplay = false
-        //if button B is pressed cancel the alarm and menuDisplay = 1
+        if (pressedB){
+          menuDisplay = 0;
+          pressedB = false;
+          pressedA = false;
+          scroll = false;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          buttonDisplay = false;
+        }
+        
+        // update the munites based on the encoder value
+        curTimeHour = curTimeHour + rotaryCount;
+        // reset encoder value
+        rotaryCount = 0;
+        // if the current set minutes is greater than 60 remove 60 from it and check again until it is less than 60
+        while (curTimeHour > 12){
+          // subtract the rollover
+          curTimeHour = curTimeHour - 12;
+          // flip AM
+          AM = !AM;
+        }
+        // if the current set minutes is less than 0 add 60 to it and check again until it is greater than 0
+        while (curTimeHour < 0){
+          // remove the rollover
+          curTimeHour = curTimeHour + 12;
+          // flip AM
+          AM = !AM;
+        }
+        
+        // if button A is pressed move on to selecting the hour
+        if (pressedA){
+          // finish the clock setting and return to main screen
+          menuDisplay = 0;
+          // reset and activate relevant variables
+          pressedB = false;
+          pressedA = false;
+          scroll = false;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          buttonDisplay = false;
+        }
       break;
 
       case 4:
         /// set alarm (time select screen)
-        //if the encoder has rotated to the right move the alarm one minute up
-        //if the encoder has rotated to the left move the alarm one minute down
-        //if button A is pressed start the alarm and menuDisplay = 0 and buttonDisplay = false
-        //if button B is pressed cancel the alarm and menuDisplay = 1
+        if (pressedB){
+          menuDisplay = 0;
+          pressedB = false;
+          pressedA = false;
+          scroll = false;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          buttonDisplay = false;
+        }
+
+        // update the minutes based on the encoder value
+        alarmTime = alarmTime + rotaryCount;
+        // reset encoder value
+        rotaryCount = 0;
+        // if the current set minutes is greater than 60 remove 60 from it and check again until it is less than 60
+        while (alarmTime > 60){
+          // subtract the rollover
+          alarmTime = alarmTime - 60;
+        }
+        // if the current set minutes is less than 0 add 60 to it and check again until it is greater than 0
+        while (alarmTime < 0){
+          // remove the rollover
+          alarmTime = alarmTime + 60;
+        }
+        
+        // if button A is pressed move on to selecting the hour
+        if (pressedA){
+          // finish the alarm setting and return to main screen
+          menuDisplay = 0;
+          TAwindow = 1;
+          // set the progress bar to its full length
+          TAwindowProgress = 25;
+          // reset and activate relevant variables
+          pressedB = false;
+          pressedA = false;
+          scroll = false;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          buttonDisplay = false;
+        }
       break;
 
       case 5:
         /// set pomodoro timer (work time select screen)
+        if (pressedB){
+          menuDisplay = 0;
+          pressedB = false;
+          pressedA = false;
+          scroll = false;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          buttonDisplay = false;
+        }
         //if the encoder has rotated to the right move the work timer one minute up
         //if the encoder has rotated to the left move the work timer one minute down
         //if button A is pressed save the new work timer value and menuDisplay = 6
@@ -315,6 +441,15 @@ void loop() {
 
       case 6:
         /// set pomodoro timer (rest time select screen)
+        if (pressedB){
+          menuDisplay = 0;
+          pressedB = false;
+          pressedA = false;
+          scroll = false;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+          buttonDisplay = false;
+        }
         //if the encoder has rotated to the right move the break timer one minute up
         //if the encoder has rotated to the left move the break timer one minute down
         //if button A is pressed start the timer (begining with a work cycle) and menuDisplay = 0 and buttonDisplay = false
