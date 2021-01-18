@@ -156,9 +156,11 @@ void loop() {
     // if the interupt has been activated the encoder hs been "fired"
     if (fired){
       if (up){
-        rotaryCount++;
+//        rotaryCount++;
+        rotaryCount--; // reversed to correct rotation direction
       } else {
-        rotaryCount--;
+//        rotaryCount--;
+        rotaryCount++; // reversed to correct rotation direction
       }
       fired = false;
       
@@ -314,7 +316,7 @@ void loop() {
         // reset encoder value
         rotaryCount = 0;
         // if the current set minutes is greater than 60 remove 60 from it and check again until it is less than 60
-        while (curTimeMin > 60){
+        while (curTimeMin > 59){
           // subtract the rollover
           curTimeMin = curTimeMin - 60;
         }
@@ -360,7 +362,7 @@ void loop() {
           AM = !AM;
         }
         // if the current set minutes is less than 0 add 60 to it and check again until it is greater than 0
-        while (curTimeHour < 0){
+        while (curTimeHour <= 0){
           // remove the rollover
           curTimeHour = curTimeHour + 12;
           // flip AM
@@ -743,8 +745,13 @@ void drawScreen() {
         display.drawLine(0, 38, 54, 38, SSD1306_WHITE);
         display.drawLine(72, 38, 127, 38, SSD1306_WHITE);
         display.drawCircle(63, 38, 8, SSD1306_WHITE);
-        display.drawLine(62, 38, 66, 38, SSD1306_WHITE);
-        display.drawLine(63, 33, 63, 39, SSD1306_WHITE);
+//        display.drawLine(62, 38, 66, 38, SSD1306_WHITE);
+//        display.drawLine(63, 33, 63, 39, SSD1306_WHITE);
+        /// moving clock arms
+        display.drawLine(63, 38, (int)(63 + (4 * cos( ((TWO_PI/12)* curTimeHour) - HALF_PI ))),(int)(38 + (4 * sin( ((TWO_PI/12)* curTimeHour) - HALF_PI ))), SSD1306_WHITE); // hour hand
+        display.drawLine(63, 38, (int)(63 + (6 * cos( ((TWO_PI/60)* curTimeMin) - HALF_PI ))),(int)(38 + (6 * sin( ((TWO_PI/60)* curTimeMin) - HALF_PI ))), SSD1306_WHITE); // minute hand
+
+        // white pixel for arm center
         display.drawPixel(63, 38, 0);
       break;
 
@@ -754,8 +761,13 @@ void drawScreen() {
         display.drawLine(0, 38, 54, 38, SSD1306_WHITE);
         display.drawLine(72, 38, 127, 38, SSD1306_WHITE);
         display.drawCircle(63, 38, 8, SSD1306_WHITE);
-        display.drawLine(62, 38, 66, 38, SSD1306_WHITE);
-        display.drawLine(63, 33, 63, 39, SSD1306_WHITE);
+//        display.drawLine(62, 38, 66, 38, SSD1306_WHITE);
+//        display.drawLine(63, 33, 63, 39, SSD1306_WHITE);
+        /// moving clock arms
+        display.drawLine(63, 38, (int)(63 + (4 * cos( ((TWO_PI/12)* curTimeHour) - HALF_PI ))),(int)(38 + (4 * sin( ((TWO_PI/12)* curTimeHour) - HALF_PI ))), SSD1306_WHITE); // hour hand
+        display.drawLine(63, 38, (int)(63 + (6 * cos( ((TWO_PI/60)* curTimeMin) - HALF_PI ))),(int)(38 + (6 * sin( ((TWO_PI/60)* curTimeMin) - HALF_PI ))), SSD1306_WHITE); // minute hand
+
+        // white pixel for arm center
         display.drawPixel(63, 38, 0);
       break;
 
