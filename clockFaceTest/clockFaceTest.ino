@@ -66,16 +66,14 @@ void isr ()
     fired = true;
   }
 }  // end of isr
-//int encoderCounter = 0; // a counter for the number of encoder ticks since last reset 
-////(encoderCounter resets to zero after a scrollable menu option is chosen resulting in the closure of the menu)
-//int aState; // the state of encoderOutputA
-//int aLastState; // the last state of encoderOutputA
-bool scroll = false; // this determines if the encoder needs to be read.
-// it will be true if there is a scrollable menu open
+
+bool scroll = false; // this determines if the encoder needs to be read. // it will be true if there is a scrollable menu open
 
 //// button declarations
 #define buttonA 9 // pin 9 is the left button output
 #define buttonB 8 // pin 8 is the right button output
+bool pressedA = false; // for use in activating button activated code and to prevent multifiring on one press
+bool pressedB = false; // for use in activating button activated code and to prevent multifiring on one press
 
 //// menu declarations
 /// menu
@@ -119,85 +117,73 @@ void setup() {
   
   Serial.begin (9600); // not sure if this is the best serial pace to use
 
-  // encoder setup after serial.being
-  // Reads the initial state of the outputA
-  aLastState = digitalRead(encoderOutputA);
-
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   
   static long rotaryCount = 0; // declare the counter for the encoder
+  static long previousRotaryCount = 0; // declare the previous count counter for the encoder
+
+    /////////////////////////
+   // timing funtionality //
+  /////////////////////////
   
   // time incrementing
-  currentMillis = millis();  //get the current "time" (actually the number of milliseconds since the program started)
-  if (currentMillis - startMillis >= period)  //test whether the period has elapsed
-  {
-    //// update that a minute has passed
-    /// clock
+//  currentMillis = millis();  //get the current "time" (actually the number of milliseconds since the program started)
+//  if (currentMillis - startMillis >= period)  //test whether the period has elapsed
+//  {
+//    //// update that a minute has passed
+//    /// clock
+//
+//    /// timer/alarm
+//    
+//    startMillis = currentMillis;  //IMPORTANT to save the start time of the current LED state.
+//  }
 
-    /// timer/alarm
-    
-    startMillis = currentMillis;  //IMPORTANT to save the start time of the current LED state.
-  }
+    ////////////////////////
+   // input funtionality //
+  ////////////////////////
   
   // encoder reading
   // If there is a scrollable menu open the loop will check tbe encoder for updates
   // and will modify encoderCounter accordingly
   if (scroll){
-    if (fired)
-    {
-    if (up)
-      rotaryCount++;
-    else
-      rotaryCount--;
-    fired = false;
-        
-    Serial.print ("Count = ");  
-    Serial.println (rotaryCount);
-    }  // end if fired
-    
-//    aState = digitalRead(encoderOutputA);
-//    if (aState != aLastState){     
-//      if (digitalRead(encoderOutputB) != aState) { 
-//        encoderCounter ++;
-//      }
-//      else {
-//        encoderCounter--;
-//      }
-//    }
-//    aLastState = aState;
+    // if the interupt has been activated the encoder hs been "fired"
+    if (fired){
+      if (up){
+        rotaryCount++;
+      } else {
+        rotaryCount--;
+      }
+      fired = false;
+      
+      Serial.print ("Count = ");  
+      Serial.println (rotaryCount);
+    }
   }
 
   // check button A for presses
   if (digitalRead(buttonA) == HIGH){
-    // activate whatever menu option is active
+    // show future code that button A has been pressed
+    Serial.println ("button A pressed");
+    pressedA = true;
+  } else {
+    pressedA = false; 
   }
 
   // check button B for presses
   if (digitalRead(buttonB) == HIGH){
-    // activate whatever secondary option is active (most likely "back" or "cancel")
+    // show future code that button B has been pressed
+    Serial.println ("button B pressed");
+    pressedB = true;
+  } else {
+    pressedB = false; 
   }
-
-  /// UI specific functionality
-  switch (TAwindow) { //0: none, 1: timer, 2: alarm, 3: sounding alarm/timer
-    case 0:
-      // display nothing
-    break;
-    
-    case 1:
-      // timer
-    break;
-
-    case 2:
-      // alarm
-    break;
-
-    case 3:
-      // ringing alarm (no progess bar or symbols)
-    break;
-  }
+  
+    /////////////////////////////////////
+   ///// UI specific functionality /////
+  /////////////////////////////////////
   
   /// menu actions
   switch (menuDisplay) {
@@ -213,24 +199,84 @@ void loop() {
         //if the encoder has rotated to the right move the highlight to the right
         //if the encoder has rotated to the left move the highlight to the left
         // if button B is pressed exit the main menu (imediately break from this case since the menu is now closed)
-        
+        if (pressedB){
+          menuDisplay = 0;
+          pressedB = false;
+          pressedA = false;
+          scroll = false;
+          rotaryCount = 0;
+          previousRotaryCount = 0;
+        } else {
+          // if the count has gone down or up change the menu highlight accordingly
+          if (previousRotaryCount < rotaryCount){
+            switch (menuOptionHighlight) {
+              case 0:
+                menuOptionHighlight = 1;
+              break;
+              case 1:
+                menuOptionHighlight = 2;
+              break;
+              case 2:
+                menuOptionHighlight = 0;
+              break; 
+            }
+          } else if (previousRotaryCount > rotaryCount){
+            switch (menuOptionHighlight) {
+              case 0:
+                menuOptionHighlight = 1;
+              break;
+              case 1:
+                menuOptionHighlight = 2;
+              break;
+              case 2:
+                menuOptionHighlight = 0;
+              break; 
+            }
+          }
+          // set the new previous rotary encoder count
+          previousRotaryCount = rotaryCount;
+        }
         /// draw the selection box around the currently highlighed box with the switch below
         switch (menuOptionHighlight) {
           case 0:
             // option 1
-            //if button A is pressed menuDisplay = 2
+            if (pressedA){
+              // activate menu option 1
+              menuDisplay = 2;
+              // reset and activate relevant variables
+              rotaryCount = 0;
+              previousRotaryCount = 0;
+              scroll = true;
+              pressedA = false;
+            }
           break;
           
           case 1:
             // option 2
-            //if button A is pressed menuDisplay = 4
+            if (pressedA){
+              // activate menu option 2
+              menuDisplay = 4;
+              // reset and activate relevant variables
+              rotaryCount = 0;
+              previousRotaryCount = 0;
+              scroll = true;
+              pressedA = false;
               //set the alarm to 0 and delete any running alarms or timers
+            }
           break;
 
           case 2:
             // option 3
-            //if button A is pressed menuDisplay = 5
+            if (pressedA){
+              // activate menu option 3
+              menuDisplay = 5;
+              // reset and activate relevant variables
+              rotaryCount = 0;
+              previousRotaryCount = 0;
+              scroll = true;
+              pressedA = false;
               //set the timer to 0 and delete any running alarms or timers
+            }
           break;
         }
       break;
@@ -276,6 +322,27 @@ void loop() {
       break;
   }
   
+  switch (TAwindow) { //0: none, 1: timer, 2: alarm, 3: sounding alarm/timer
+    case 0:
+      // display nothing
+      
+    break;
+    
+    case 1:
+      // timer
+    break;
+
+    case 2:
+      // alarm
+    break;
+
+    case 3:
+      // ringing alarm (no progess bar or symbols)
+    break;
+  }
+
+  /// draw the screen
+  drawScreen();
 }
 
 // function for drawing the screen
