@@ -75,17 +75,10 @@ bool scroll = false; // this determines if the encoder needs to be read. // it w
 bool pressedA = false; // for use in activating button activated code and to prevent multifiring on one press
 bool pressedB = false; // for use in activating button activated code and to prevent multifiring on one press
 
-////// menu declarations
-///// menu
-//bool menuOpen = false;
-//int menuPos = 0;
-///// timer
-//bool setTimerOpen = false;
-///// clock
-//// variable for time (not sure how to store)
-///// set clock
-//bool setClockOpen = false;
 
+    /////////////////
+   ///// Setup /////
+  /////////////////
 
 void setup() {
   // put your setup code here, to run once:
@@ -118,6 +111,11 @@ void setup() {
   Serial.begin (9600); // not sure if this is the best serial pace to use
 
 }
+
+
+    ////////////////
+   ///// Loop /////
+  ////////////////
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -221,7 +219,6 @@ void loop() {
         } else {
           // if the count has gone down or up change the menu highlight accordingly
           if (previousRotaryCount < rotaryCount){
-            Serial.println ("pre < current");
             switch (menuOptionHighlight) {
               case 0:
                 menuOptionHighlight = 1;
@@ -234,7 +231,6 @@ void loop() {
               break; 
             }
           } else if (previousRotaryCount > rotaryCount){
-            Serial.println ("pre > current");
             switch (menuOptionHighlight) {
               case 0:
                 menuOptionHighlight = 2;
@@ -306,6 +302,7 @@ void loop() {
           previousRotaryCount = 0;
           buttonDisplay = false;
         }
+        
         // update the munites based on the encoder value
         curTimeMin = curTimeMin + rotaryCount;
         // reset encoder value
@@ -456,6 +453,27 @@ void loop() {
         //if button B is pressed cancel the timer and menuDisplay = 1
       break;
   }
+
+  //// clock maintinence
+  // minutes char conversion
+  if(curTimeMin < 10){
+    curTimeChar[3] = '0';
+    curTimeChar[4] = '0' + curTimeMin;
+  } else {
+    short int tensPlace = curTimeMin / 10;
+    curTimeChar[3] = '0' + tensPlace;
+    curTimeChar[4] = '0' + (curTimeMin - (tensPlace * 10));
+  }
+  
+  // hours char conversion
+  if(curTimeHour < 10){
+    curTimeChar[0] = '0';
+    curTimeChar[1] = '0' + curTimeHour;
+    
+  } else { 
+    curTimeChar[0] = '1';
+    curTimeChar[1] = '0' + (curTimeHour - 10);
+  }
   
   switch (TAwindow) { //0: none, 1: timer, 2: alarm, 3: sounding alarm/timer
     case 0:
@@ -465,10 +483,12 @@ void loop() {
     
     case 1:
       // timer
+      
     break;
 
     case 2:
       // alarm
+      
     break;
 
     case 3:
@@ -682,7 +702,7 @@ void drawScreen() {
       // draw the text
       display.setTextSize(1);
       display.setCursor(8, 53);     // lower left
-      display.write("menu");
+      display.write("entr");
       display.setCursor(96, 53);     // lower right
       display.write("back");
     break;
