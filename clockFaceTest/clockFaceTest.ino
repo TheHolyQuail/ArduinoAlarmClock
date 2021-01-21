@@ -30,7 +30,7 @@ bool buttonDisplay = false;
 short int TAwindow = 0;
 
 //// time declarations
-unsigned long currentMillis;
+//unsigned long currentMillis; decalred in loop
 unsigned long previousMillis = 0;
 const unsigned long period = 60000;  //the value is a number of milliseconds, ie 60 seconds
 
@@ -40,8 +40,10 @@ char curTimeChar[5] = {'0', '0', ':', '0', '0'}; // displayable text of the time
 bool AM = true; // true if the time is AM, false if it is PM
 /// timer and alarm variables
 short int alarmTime = 0; // minutes left in the timer
-short int timerWorkTime = 0; // minutes left in the timer
-short int timerBreakTime = 0; // minutes left in the timer
+short int timerWorkTime = 0; // minutes set for work timer
+short int timerWorkTimeRemaining = 0; // minutes left in the timer
+short int timerBreakTime = 0; // minutes set for break timer
+short int timerBreakTimeRemaining = 0; // minutes left in the timer
 char timerChar[2] = {'0', '0'}; // the first and second characters representing the remaining time in minutes (timers and alarms can be a max of 1 hour in this clock screen design)
 char alarmChar[2] = {'0', '0'}; // the first and second characters representing the remaining time in minutes (timers and alarms can be a max of 1 hour in this clock screen design)
 char TAwindowSym = 'w'; // ' ': none, 'w': timer (work section), 'b': timer (break section), 'a': alarm 
@@ -131,19 +133,61 @@ void loop() {
   /////////////////////////
   
   // time incrementing
-//  currentMillis = millis();  //get the current "time" (actually the number of milliseconds since the program started)
-//  if (currentMillis - startMillis >= period)  //test whether the period has elapsed
-//  {
-//    //// update that a minute has passed
-//    /// clock
-//
-//    /// timer/alarm
-//    // only adjusts if the alarm/timer variables are greater than zero
-//    // if it sets an alarm of timer to zero the alarm done screen is activated for a second and a sound is played
-//    // if a timer is what finished then swap the timer value over to the next phase of the pomodoro set
-// 
-//    startMillis = currentMillis;  //IMPORTANT to save the start time of the current LED state.
-//  }
+  unsigned long currentMillis = millis();  //get the current "time" (actually the number of milliseconds since the program started)
+  if (currentMillis - previousMillis >= period)  //test whether the period has elapsed
+  {
+    previousMillis = currentMillis;  //IMPORTANT to save the start time of the current LED state.
+    
+    //// update that a minute has passed
+    /// clock
+    curTimeMin++; // add a mimute to the curent time minute variable
+    // if the current minute count is 60 (or higher for some reason) increase the hour by one and rollover the minute count
+    if (curTimeMin >= 60){
+        curTimeMin = curTimeMin - 60;
+        curTimeHour++;
+        // if the current hour count is 12 (or higher for some reason) rollover the hour count and flip the state of AM
+        if (curTimeHour >= 12){
+            curTimeHour = curTimeHour - 12;
+            AM = !AM;
+        }
+    }
+    
+    /// timer/alarm
+    // only adjusts if the alarm/timer variables are greater than zero
+    // if it sets an alarm of timer to zero the alarm done screen is activated for a second and a sound is played
+    // if a timer is what finished then swap the timer value over to the next phase of the pomodoro set
+    // check if an alarm is active
+    if (alarmTime > 0){
+      alarmTime--;
+      // if the alarm has just been set to zero show th alarm sounding icon, reset the timer window symbol, and play the alarm sound
+      if (alarmTime == 0){
+        TAwindow = 3;
+        TAwindowSym = ' ';
+        //ring the alarm <--
+      }
+    }
+    
+    if (timerWorkTimeRemaining > 0){
+      timerWorkTimeRemaining--;
+      // if the work Time has just been set to zero swap to the break countdown by setting the timer window symbol to 'b', reset the work timer, and play the timer sound
+      if (timerWorkTimeRemaining == 0){
+        TAwindowSym = 'b';
+        timerWorkTimeRemaining = timerWorkTime;
+        //ring the timer <--
+      }
+    }
+
+    if (timerBreakTimeRemaining > 0){
+      timerBreakTimeRemaining--;
+      // if the work Time has just been set to zero swap to the work countdown by setting the timer window symbol to 'w', reset the break timer, and play the timer sound
+      if (timerBreakTimeRemaining == 0){
+        TAwindowSym = 'w';
+        timerBreakTimeRemaining = timerBreakTime;
+        //ring the timer <--
+      }
+    }
+    
+  }
 
     ////////////////////////
    // input funtionality //
@@ -164,15 +208,15 @@ void loop() {
       }
       fired = false;
       
-      Serial.print ("Count = ");  
-      Serial.println (rotaryCount);
+//      Serial.print ("Count = ");  
+//      Serial.println (rotaryCount);
     }
   }
 
   // check button A for presses
   if (digitalRead(buttonA) == HIGH){
     // show future code that button A has been pressed
-    Serial.println ("button A pressed");
+//    Serial.println ("button A pressed");
     pressedA = true;
     delay(500);
   } else {
@@ -182,7 +226,7 @@ void loop() {
   // check button B for presses
   if (digitalRead(buttonB) == HIGH){
     // show future code that button B has been pressed
-    Serial.println ("button B pressed");
+//    Serial.println ("button B pressed");
     pressedB = true;
     delay(500);
   } else {
@@ -469,9 +513,10 @@ void loop() {
         
         // if button A is pressed move on to selecting the hour
         if (pressedA){
-          // finish the alarm setting and return to main screen
+          // finish the work timer setting and move to the break timer select
           menuDisplay = 6;
           TAwindow = 1;
+          timerWorkTimeRemaining = timerWorkTime;
           // set the progress bar to its full length
           TAwindowProgress = 12;
           // reset and activate relevant variables
@@ -519,9 +564,10 @@ void loop() {
         
         // if button A is pressed move on to selecting the hour
         if (pressedA){
-          // finish the alarm setting and return to main screen
+          // finish the break timer setting, activate the work timer, and return to main screen
           menuDisplay = 0;
           TAwindow = 1;
+          timerBreakTimeRemaining = timerBreakTime;
           TAwindowSym = 'w';
           // set the progress bar to its full length
           TAwindowProgress = 25;
@@ -570,22 +616,22 @@ void loop() {
     case 1:
       // timer
       if(TAwindowSym == 'w'){
-        if(timerWorkTime < 10){
+        if(timerWorkTimeRemaining < 10){
           timerChar[0] = '0';
-          timerChar[1]= '0' + timerWorkTime;
+          timerChar[1]= '0' + timerWorkTimeRemaining;
         } else {
-          short int tensPlace = timerWorkTime / 10;
+          short int tensPlace = timerWorkTimeRemaining / 10;
           timerChar[0] = '0' + tensPlace;
-          timerChar[1] = '0' + (timerWorkTime - (tensPlace * 10));
+          timerChar[1] = '0' + (timerWorkTimeRemaining - (tensPlace * 10));
         }
       } else {
-        if(timerBreakTime < 10){
+        if(timerBreakTimeRemaining < 10){
           timerChar[0] = '0';
-          timerChar[1]= '0' + timerBreakTime;
+          timerChar[1]= '0' + timerBreakTimeRemaining;
         } else {
-          short int tensPlace = timerBreakTime / 10;
+          short int tensPlace = timerBreakTimeRemaining / 10;
           timerChar[0] = '0' + tensPlace;
-          timerChar[1] = '0' + (timerBreakTime - (tensPlace * 10));
+          timerChar[1] = '0' + (timerBreakTimeRemaining - (tensPlace * 10));
         }
       }
     break;
@@ -629,7 +675,7 @@ void drawScreen() {
   /// draw the clock specific content
   display.setTextSize(2); // clock text size
   display.setCursor(3, 5);     // upper right
-  //display.write(curTimeChar);
+  
   for (int i = 0; i < 5; i++) {
     display.write(curTimeChar[i]);
   } // if length can change use sizeof(xyz)/sizeof(xyz[0]) to get the length of array xyz
@@ -656,6 +702,7 @@ void drawScreen() {
       display.setTextSize(1); // symbol text size
       display.setCursor(121, 3);     // upper left
       display.write(TAwindowSym); // current timer symbol
+      // draw the progress bar
     break;
 
     case 2:
@@ -741,7 +788,7 @@ void drawScreen() {
 
       case 2:
         /// set time (minutes)
-        //draw a static image
+        //draw static parts of the image
         display.drawLine(0, 38, 54, 38, SSD1306_WHITE);
         display.drawLine(72, 38, 127, 38, SSD1306_WHITE);
         display.drawCircle(63, 38, 8, SSD1306_WHITE);
@@ -757,7 +804,7 @@ void drawScreen() {
 
       case 3:
         /// set time (hours)
-        //draw a static image
+        //draw static parts of the image
         display.drawLine(0, 38, 54, 38, SSD1306_WHITE);
         display.drawLine(72, 38, 127, 38, SSD1306_WHITE);
         display.drawCircle(63, 38, 8, SSD1306_WHITE);
@@ -801,7 +848,7 @@ void drawScreen() {
         display.drawLine(62, 38, 66, 38, SSD1306_WHITE);
         display.drawLine(63, 33, 63, 39, SSD1306_WHITE);
         display.drawPixel(63, 38, 0);
-        // draw a readout of the current timer time and indication that this is the "rest" time
+        // draw a readout of the current timer time and indication that this is the "break" time
       break;
   }
 
