@@ -32,6 +32,7 @@ short int TAwindow = 0;
 //// time declarations
 //unsigned long currentMillis; decalred in loop
 unsigned long previousMillis = 0;
+unsigned long previousMillisSound = 0;
 const unsigned long period = 60000;  //the value is a number of milliseconds, ie 60 seconds
 
 short int curTimeHour = 0; // hours portion of the current time
@@ -80,6 +81,12 @@ bool scroll = false; // this determines if the encoder needs to be read. // it w
 bool pressedA = false; // for use in activating button activated code and to prevent multifiring on one press
 bool pressedB = false; // for use in activating button activated code and to prevent multifiring on one press
 
+//// sound declarations
+#define clickA 10 // the sound for making a menu selection
+#define clickB 11 // the sound for finishing the setting of the clock, alarm, or timer
+#define alarmEnd 12 // the sound that plays when an alarm finishes
+bool soundPlaying = false; // keeps track of whether a sound is being played
+short int curSoundPlaying = 0; // 0: no sound, 1: clickA, 2: clickB, 3: alarmEnd
 
     /////////////////
    ///// Setup /////
@@ -112,6 +119,11 @@ void setup() {
   /// button setup
   pinMode (buttonA, INPUT);
   pinMode (buttonB, INPUT);
+
+  /// sound pin setup (seems to be unnecessary due to the activation logic in the loop)
+//  pinMode (clickA, OUTPUT);
+//  pinMode (clickB, OUTPUT);
+//  pinMode (alarmEnd, OUTPUT);
   
   Serial.begin (9600); // not sure if this is the best serial pace to use
 
@@ -164,6 +176,8 @@ void loop() {
         TAwindow = 3;
         TAwindowSym = ' ';
         //ring the alarm <--
+        //0: none, 1: clickA, 2: clickB, 3: alarmEnd
+        curSoundPlaying = 3;
       }
     }
     
@@ -174,6 +188,8 @@ void loop() {
         TAwindowSym = 'b';
         timerWorkTimeRemaining = timerWorkTime;
         //ring the timer <--
+        //0: none, 1: clickA, 2: clickB, 3: alarmEnd
+        curSoundPlaying = 3;
       }
     }
 
@@ -184,6 +200,8 @@ void loop() {
         TAwindowSym = 'w';
         timerBreakTimeRemaining = timerBreakTime;
         //ring the timer <--
+        //0: none, 1: clickA, 2: clickB, 3: alarmEnd
+        curSoundPlaying = 3;
       }
     }
     
@@ -219,6 +237,8 @@ void loop() {
 //    Serial.println ("button A pressed");
     pressedA = true;
     delay(500);
+    //0: none, 1: clickA, 2: clickB, 3: alarmEnd
+    //curSoundPlaying = 2; curretly disabled until better sounds are found
   } else {
     pressedA = false; 
   }
@@ -229,6 +249,8 @@ void loop() {
 //    Serial.println ("button B pressed");
     pressedB = true;
     delay(500);
+    //0: none, 1: clickA, 2: clickB, 3: alarmEnd
+    //curSoundPlaying = 1; curretly disabled until better sounds are found
   } else {
     pressedB = false; 
   }
@@ -649,8 +671,60 @@ void loop() {
     break;
 
     case 3:
-      // ringing alarm (no progess bar or symbols)
+      // ringing alarm (no progess bar or variable numbers)
     break;
+  }
+
+    //////////////////////
+   /////sound timing/////
+  //////////////////////
+  
+  if (currentMillis - previousMillisSound >= 130)  //test whether the time it takes to activate a sound (+10 miliseconds to ensure reliability) has elapsed
+  {
+    previousMillisSound = currentMillis;  //IMPORTANT to save the start time of the current LED state.
+
+    if (soundPlaying){
+      curSoundPlaying = 0;
+    }
+    //// update the sound
+    switch (curSoundPlaying) { //0: none, 1: clickA, 2: clickB, 3: alarmEnd
+      case 0:
+        // turn off all sound channels
+        // set all sound pins to input to emulate an open drain pin
+        pinMode(10, INPUT);
+        pinMode(11, INPUT);
+        pinMode(12, INPUT);
+        soundPlaying = false;
+      break;
+      
+      case 1:
+        // play clickA (10) and turn off all sound channels
+        pinMode(10, OUTPUT);
+        digitalWrite(10, LOW);
+        pinMode(11, INPUT);
+        pinMode(12, INPUT);
+        soundPlaying = true;
+      break;
+      
+      case 2:
+        // play clickB (11) and turn off all sound channels
+        pinMode(10, INPUT);
+        pinMode(11, OUTPUT);
+        digitalWrite(11, LOW);
+        pinMode(12, INPUT);
+        soundPlaying = true;
+      break;
+      
+      case 3:
+        // play alarmEnd (12) and turn off all sound channels
+        pinMode(10, INPUT);
+        pinMode(11, INPUT);
+        pinMode(12, OUTPUT);
+        digitalWrite(12, LOW);
+        soundPlaying = true;
+      break;
+    }
+    
   }
 
   /// draw the screen
