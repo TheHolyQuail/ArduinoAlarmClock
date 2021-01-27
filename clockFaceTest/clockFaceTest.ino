@@ -104,7 +104,7 @@ void setup() {
   // Show initial display buffer contents on the screen --
   // the library initializes this with an Adafruit splash screen.
   display.display();
-  delay(2000); // Pause for 2 seconds
+  delay(1000); // Pause for 2 seconds
   // Clear the buffer
   display.clearDisplay();
   
