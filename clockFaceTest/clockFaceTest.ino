@@ -1,10 +1,6 @@
 //Arduino libraries
 #include <Arduino.h>
 
-// button and encoder libraries
-// #include <Button.h> maybe no need for this
-// #include <Encoder.h> maybe no need for this
-
 // screen libraries
 #include <SPI.h>
 #include <Wire.h>
