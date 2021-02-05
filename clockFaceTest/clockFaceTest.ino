@@ -131,7 +131,7 @@ void setup() {
   ////////////////
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  // the main code which runs repeatedly:
   
   static long rotaryCount = 0; // declare the counter for the encoder
   static long previousRotaryCount = 0; // declare the previous count counter for the encoder
@@ -725,9 +725,14 @@ void loop() {
 
   /// draw the screen
   drawScreen();
-}
+  
+} // end loop
 
-// function for drawing the screen
+    ///////////////////////
+   ///// draw screen /////
+  ///////////////////////
+
+//// function for drawing the screen
 void drawScreen() {
   /// clear display
   display.clearDisplay();
