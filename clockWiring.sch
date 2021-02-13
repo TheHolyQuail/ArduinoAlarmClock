@@ -2634,7 +2634,7 @@ naming: grid - package width</description>
 <attribute name="VALUE" x="215.9" y="75.946" size="1.778" layer="96" font="vector" align="top-left"/>
 </instance>
 <instance part="U$3" gate="G$1" x="91.948" y="136.398" smashed="yes"/>
-<instance part="U$4" gate="G$1" x="97.028" y="136.398" smashed="yes"/>
+<instance part="U$4" gate="G$1" x="94.488" y="136.398" smashed="yes"/>
 <instance part="U$5" gate="G$1" x="180.34" y="129.54" smashed="yes"/>
 <instance part="SP1" gate="S1" x="248.92" y="149.86" smashed="yes">
 <attribute name="NAME" x="246.888" y="146.812" size="1.778" layer="95"/>
@@ -2721,14 +2721,14 @@ naming: grid - package width</description>
 </net>
 <net name="PIN4" class="0">
 <segment>
-<pinref part="U$2" gate="G$1" pin="CS"/>
-<wire x1="93.98" y1="137.16" x2="93.98" y2="127" width="0.1524" layer="91"/>
-<label x="92.456" y="124.46" size="1.778" layer="95"/>
-</segment>
-<segment>
 <pinref part="U$6" gate="G$1" pin="4"/>
 <wire x1="137.16" y1="76.2" x2="137.16" y2="63.5" width="0.1524" layer="91"/>
 <label x="134.62" y="60.96" size="1.778" layer="95"/>
+</segment>
+<segment>
+<pinref part="U$2" gate="G$1" pin="RST"/>
+<wire x1="96.52" y1="137.16" x2="96.52" y2="124.46" width="0.1524" layer="91"/>
+<label x="96.52" y="121.92" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="A5" class="0">
